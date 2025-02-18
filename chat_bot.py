@@ -9,8 +9,19 @@ from langchain.chains import create_retrieval_chain
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain_core.prompts import ChatPromptTemplate
 from yaspin import yaspin
+
+import inquirer
+
+questions = [
+    inquirer.Text('query', message="👋 Hello there! What's your query?")
+]
+user_query = inquirer.prompt(questions).get('query')
+
 spinner = yaspin(text="Thinking...", color="yellow")
 
+
+# Now, pass 'input_data' to 'invoke' method
+spinner.start()
 
 embeddings = OllamaEmbeddings(
     model="llama3",
@@ -71,7 +82,7 @@ docs = [
 
 vector_store.add_documents(docs, ids=[doc.metadata["id"] for doc in docs])
 
-retriever = vector_store.as_retriever(search_type="mmr", search_kwargs={"k": 1})
+retriever = vector_store.as_retriever(search_type="mmr", search_kwargs={"k": 10})
 
 llm = OllamaLLM(model="llama3")  # You can replace "llama3" with any other model
 
@@ -94,15 +105,8 @@ Context:{context}"""
 qa_chain = question_answer_chain = create_stuff_documents_chain(llm, prompt)
 chain = create_retrieval_chain(retriever, question_answer_chain)
 
-# Query and retrieve relevant documents
-my_query = "What class community center offers?"
-
-
-# Now, pass 'input_data' to 'invoke' method
-spinner.start()
-
-response = chain.invoke({"input": my_query})
+response = chain.invoke({"input": user_query})
 
 spinner.stop()
 
-print(response['answer'])  # Output the final response
+print("🤖 AI Bot:", response['answer'])  # Output the final response
